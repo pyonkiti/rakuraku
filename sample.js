@@ -12,10 +12,9 @@ var com = require('./common.js');
 // 
 // 配列をCSV出力する【サンプル】
 // 
+// ------------------------------------------------------------------
 
 const { release } = require('process');
-
-// ------------------------------------------------------------------
 function test01_write(flg_bom) {
  
     try {
@@ -152,5 +151,94 @@ function test_write_sisetu01() {
 
 
 
+// ------------------------------------------------------------------
+// 端末ID.csvと請求.csvを読み込み、都道府県＋市町村名＋ユーザーキーでマッチングさせ、
+// 結果を請求_new.csvに書き込む
+// ------------------------------------------------------------------
 
+function test_match_meisyo() {
+ 
+    var fs = require('fs'), fd;
+
+    var file_r = __dirname + "/端末ID/端末ID"    + ".csv";             // 読み込みファイル（元）
+    var file_w = __dirname + "/端末ID/請求"      + ".csv";             // 書き込み先ファイル（先）
+    var file_n = __dirname + "/端末ID/請求_new"  + ".csv";             // 書き込み先ファイル（先）
+    
+
+    // 端末ID.csvを読み込む
+    var text  = fs.readFileSync(file_r, 'utf8');                      // 第二引数はテキストファイルの文字コードを指定
+    var lines = text.toString().split('\n');                          // \r\n or \n 改行コード split 文字列⇒配列
+   
+    var ary_user = {};                                         　     // 端末IDの連想配列（自動採番:ユーザー名）
+
+
+    // 端末IDを全件読み込んで、連想配列に（自動採番：ユーザー名）をセット
+    for (var idx in lines) {
+
+        let ary_data = lines[idx].split(',')[0];
+        if (ary_data != "" ) {
+            if (ary_data != "自動採番") {
+                ary_user[ary_data] = lines[idx].split(',')[1] + lines[idx].split(',')[2];    // ary_user[キー]=値 で連想配列に追加
+            }
+        }
+    }
+
+   
+
+    // 請求.csvを読み込む
+    var text  = fs.readFileSync(file_w, 'utf8');                  // 第二引数はテキストファイルの文字コードを指定
+    var lines = text.toString().split('\n');                      // \r\n or \n 改行コード split 文字列⇒配列
+
+
+
+    // 請求_new.csv　空ファイルを作成してオープン
+    fs.writeFileSync(file_n, "");
+    var fd = fs.openSync(file_n, "a");
+
+    
+
+    // 請求.csvを全件読み込む
+    for (var idx in lines) {
+
+        let wrt_lines = [];
+
+        // replace 改行コードを削除
+        // split 文字列⇒配列
+        wrt_lines[0] = (lines[idx].replace(/\r/g, "")).split(',');
+        wrt_lines[1] = "";
+     
+
+        if (idx == 0) {
+            wrt_lines[1] = "自動採番（端末ID）";
+        } else {
+
+            //請求.csvの都道府県名＋市区町村名→端末ID.csvのユーザー名を検索してマッチングさせる
+            let ary_user_key = Object.keys(ary_user).filter((key) => {
+
+                return ary_user[key] === wrt_lines[0][1] + wrt_lines[0][2] + wrt_lines[0][3];
+            })
+
+            // 2回以上マッチングがあった場合、配列で複数返すため、先頭の1回目のみ出力対象とする            
+            switch (ary_user_key.length) {
+                case 0:
+                    wrt_lines[1] = "";
+                    break;
+                case 1:
+                    wrt_lines[1] = ary_user_key[0];
+                    break;
+                default:
+                    wrt_lines[1] = "複数マッチ有 " + ary_user_key;
+            }
+
+        }
+        
+
+        // 請求_new.csvを書き込む
+        // EOF行を書き込まない
+        let wrt_lines_last = wrt_lines[0][0] + "," + wrt_lines[0][1] + wrt_lines[0][2] + "," + wrt_lines[1];
+        if (wrt_lines[0][0] != "") { fs.writeSync(fd, wrt_lines_last + "\n", 0) };
+    }
+
+    fs.closeSync(fd);
+}
 
