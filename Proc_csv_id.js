@@ -750,6 +750,42 @@ function proc8_write_syaincd() {
 
 
 
+// ------------------------------------------------------------------
+//
+// ファイルの文字コードを調べる
+// UTF-8であれば開く。UTF-8以外であれば、警告メッセージを出してエラーにする
+//
+// ------------------------------------------------------------------
+
+function proc9_check_file(flg) {
+
+    var fs = require('fs'), fd;
+    var jschardet = require('jschardet');
+
+    var filnm = ["sample_utf8", "sample_utf16", "sample_utf16be", "sample_sjis"];
+    var file = __dirname + "/端末ID/" + filnm[flg] + ".txt";
+
+    var text = fs.readFileSync(file);
+
+    // 文字コードがUTF-8(ascii)以外であれば、エラーにする
+    if (jschardet.detect(text).encoding != "ascii") {
+
+        let msg1;
+        msg1 = "ファイルの文字コードがUTF8でないため開くことができません。" + "\n";
+        msg1 += "ファイルの文字コードは、" + jschardet.detect(text).encoding + "です。";
+        console.log(msg1);
+
+        let msg2;
+        msg2 = jschardet.detect(text);
+        console.log(msg2);
+        return;
+    }
+
+    console.log("OK! ファイルは、" + jschardet.detect(text).encoding + "です。");
+}
+
+
+
 
 
 // proc1_write_header();
@@ -760,3 +796,4 @@ function proc8_write_syaincd() {
 // proc6_write_sisetu_only();
 // proc7_write_zeropad();
 
+proc9_check_file(3);

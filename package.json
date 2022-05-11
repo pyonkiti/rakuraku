@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "xlsx": "^0.18.4"
+    "jschardet": "^3.0.0"
   }
 }
