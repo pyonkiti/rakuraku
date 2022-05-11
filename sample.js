@@ -242,3 +242,4 @@ function test_match_meisyo() {
     fs.closeSync(fd);
 }
 
+
