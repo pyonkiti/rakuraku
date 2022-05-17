@@ -786,6 +786,54 @@ function proc9_check_file(flg) {
 
 
 
+// ------------------------------------------------------------------
+//
+// 保守契約管理を、AppSuite→楽楽に移行するときの、「保守契約範囲」項目コンバート
+// 保守契約範囲が複数選択されている場合、Enter区切→半角ブランク区切に置換する
+//
+// ------------------------------------------------------------------
+
+function proc10_conv_hosyuhani() {
+
+    var fs = require('fs');
+    var fd;
+
+    var file_red = __dirname + "/保守契約/保守契約管理アプリ_2回目" + ".csv";
+    var file_wrt = __dirname + "/保守契約/保守契約管理アプリ_2回目_コンバート後" + ".csv";
+
+    var line = [];
+
+    // 読み込むファイルをオープンする
+    var text = fs.readFileSync(file_red, 'utf8');
+
+    line[0] = text.toString();
+
+    // 対応と原因の間に改行コードがある場合、楽楽特有の何かのコードに置換
+    line[1] = line[0].replace(/対応\r?\n原因/g, "対応	原因");
+    line[2] = line[1].replace(/対応\r?\n現地/g, "対応	現地");
+
+    // 文字列⇒配列
+    line[3] = line[2].split('\n');
+
+    // 書き込むファイルをオープンする
+    fs.writeFileSync(file_wrt, "");
+    fd = fs.openSync(file_wrt, "a");
+
+    for (var idx in line[3]) {
+
+        // １列単位で、文字列⇒配列
+        let wdata = line[3][idx] + "";
+
+        // 空白行は書き込まない
+        if (wdata != "") {
+            fs.writeSync(fd, wdata + "\n", 0);
+        }
+    }
+    fs.closeSync(fd);
+}
+
+
+
 
 
 // proc1_write_header();
@@ -795,5 +843,5 @@ function proc9_check_file(flg) {
 // proc5_write_sisetu();
 // proc6_write_sisetu_only();
 // proc7_write_zeropad();
-
-proc9_check_file(3);
+// proc9_check_file(3);
+// proc10_conv_hosyuhani();
