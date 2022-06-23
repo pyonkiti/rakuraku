@@ -6,15 +6,17 @@
 
 var com = require('./common.js');
 
+'use strict';
 
 
 // ------------------------------------------------------------------
-// 
-// 配列をCSV出力する【サンプル】
+// テキストファイル処理
+// 配列をCSVファイルに出力する【サンプル】
 // 
 // ------------------------------------------------------------------
 
 const { release } = require('process');
+const { EPROTOTYPE } = require('constants');
 function test01_write(flg_bom) {
  
     try {
@@ -48,8 +50,8 @@ function test01_write(flg_bom) {
 
 
 // ------------------------------------------------------------------
-// 
-// Excelファイルのユーザー一覧のシート内に罫線、テキスト貼り付けがあってもRead/Writeができるかの確認用
+// Excelファイル処理
+// Excelファイルを読み込んで、特定のセルの値を読み込み、新規のテキストファイルに書き込む
 // 
 // ------------------------------------------------------------------
 function test02_sheet_user(){
@@ -102,8 +104,8 @@ function test02_sheet_user(){
 
 
 // ------------------------------------------------------------------
-// 
-// テキストファイル読込のテスト
+// テキストファイル処理
+// テキストファイルを読み込んでコンソールに表示する
 // 
 // ------------------------------------------------------------------
 
@@ -124,6 +126,7 @@ function test03_read() {
 
 
 // ------------------------------------------------------------------
+// 連想配列
 // 連想配列の値からキーを取得  結果がなければnullが返る
 // ------------------------------------------------------------------
 
@@ -152,6 +155,7 @@ function test_write_sisetu01() {
 
 
 // ------------------------------------------------------------------
+// テキストファイル
 // 端末ID.csvと請求.csvを読み込み、都道府県＋市町村名＋ユーザーキーでマッチングさせ、
 // 結果を請求_new.csvに書き込む
 // ------------------------------------------------------------------
@@ -162,15 +166,13 @@ function test_match_meisyo() {
 
     var file_r = __dirname + "/端末ID/端末ID"    + ".csv";             // 読み込みファイル（元）
     var file_w = __dirname + "/端末ID/請求"      + ".csv";             // 書き込み先ファイル（先）
-    var file_n = __dirname + "/端末ID/請求_new"  + ".csv";             // 書き込み先ファイル（先）
-    
+    var file_n = __dirname + "/端末ID/請求_new"  + ".csv";             // 書き込み先ファイル（先）  
 
     // 端末ID.csvを読み込む
     var text  = fs.readFileSync(file_r, 'utf8');                      // 第二引数はテキストファイルの文字コードを指定
     var lines = text.toString().split('\n');                          // \r\n or \n 改行コード split 文字列⇒配列
    
     var ary_user = {};                                         　     // 端末IDの連想配列（自動採番:ユーザー名）
-
 
     // 端末IDを全件読み込んで、連想配列に（自動採番：ユーザー名）をセット
     for (var idx in lines) {
@@ -183,19 +185,13 @@ function test_match_meisyo() {
         }
     }
 
-   
-
     // 請求.csvを読み込む
     var text  = fs.readFileSync(file_w, 'utf8');                  // 第二引数はテキストファイルの文字コードを指定
     var lines = text.toString().split('\n');                      // \r\n or \n 改行コード split 文字列⇒配列
 
-
-
     // 請求_new.csv　空ファイルを作成してオープン
     fs.writeFileSync(file_n, "");
     var fd = fs.openSync(file_n, "a");
-
-    
 
     // 請求.csvを全件読み込む
     for (var idx in lines) {
@@ -229,17 +225,309 @@ function test_match_meisyo() {
                 default:
                     wrt_lines[1] = "複数マッチ有 " + ary_user_key;
             }
-
         }
         
-
         // 請求_new.csvを書き込む
         // EOF行を書き込まない
         let wrt_lines_last = wrt_lines[0][0] + "," + wrt_lines[0][1] + wrt_lines[0][2] + "," + wrt_lines[1];
         if (wrt_lines[0][0] != "") { fs.writeSync(fd, wrt_lines_last + "\n", 0) };
     }
-
     fs.closeSync(fd);
 }
+
+
+// ------------------------------------------------------------------
+// 日付の論理チェック
+//
+// https://blog.beatdjam.com/entry/2017/07/28/181201
+//
+// 画面に、20022/02/01形式で入力してもらい、日付の論理チェックをTorFで返す
+// 2022/02/01でも、2022/2/1でも論理チェックOKとしている
+// 2022-02-01型は×
+//
+//
+// ------------------------------------------------------------------
+
+function test_check_date(date) {
+    
+    if (date == undefined) {
+        return false;
+    }
+
+    if (date == "") {
+        return false;
+    }
+    
+    // yyyy/mm/dd の形のみOKとする
+    if (!date.match(/^\d{4}\/\d{1,2}\/\d{1,2}$/)) {
+        return false;
+    }          
+
+    var ddate = new Date(date);
+
+    if (ddate.getFullYear() == date.split("/")[0]   && 
+        ddate.getMonth()    == date.split("/")[1]-1 &&
+        ddate.getDate()     == date.split("/")[2]) {
+    } else {
+        return false;
+    }
+    return true;
+}
+
+
+
+// ------------------------------------------------------------------
+// 数値チェック
+//
+// 数値であるかどうかのチェック T or Fを返す
+// 正規表現の説明 先頭が[0-9]のいずれかで始まり、終わりも[0-9]のいずれかで終わる
+// +があるので[0-9]のいずれかが1個以上含まれる
+//
+// ------------------------------------------------------------------
+
+function test_check_numeric(data) {
+    
+    var regex = new RegExp(/^[0-9]+$/);
+    if (regex.test(data) == false) {
+        return false;
+    }
+    return true;
+}
+
+
+// ------------------------------------------------------------------
+// 日付処理
+//
+// システム日付を yyyy/mm/ddの形式で取得する
+// 1/1 → 01/01 に変換する
+// ------------------------------------------------------------------
+
+function test_get_date() {
+
+    let date = new Date();
+
+    let yy = date.getFullYear();
+    let mm = (date.getMonth() + 1).toString().padStart(2, '0');
+    let dd = date.getDate().toString().padStart(2, '0');
+
+    return yy + "/" + mm + "/" + dd;
+}
+
+
+// ------------------------------------------------------------------
+// 日数の経過日を計算
+//
+// 引数の日付はyyyymm/dd型のちゃんとした日付でないといけない
+// 1日＝86400000秒
+// day2 < day1の時はマイナス日数となる
+// day = day2 の時は0が返ってくる
+//
+// ------------------------------------------------------------------
+
+function test_get_date_sa(data1, data2) {
+
+    let day1 = new Date(data1);
+    let day2 = new Date(data2);
+
+    let day3 = (day2 - day1) / 86400000;
+    return day3.toString();
+}
+
+
+// ------------------------------------------------------------------
+//
+// システム時刻を hh:mm:ddの形式で取得する
+//
+// ------------------------------------------------------------------
+
+function test_get_time() {
+
+    let date = new Date();
+
+    let hh = date.getHours().toString().padStart(2, '0');
+    let mm = date.getMinutes().toString().padStart(2, '0');
+    let ss = date.getSeconds().toString().padStart(2, '0');
+
+    return hh + ":" + mm + ":" + ss;
+}
+
+
+// ------------------------------------------------------------------
+//
+// 指定した月の月末日を取得する
+// 11月の月末日を取得したい場合、Dateに11月0日を与えてやる、ちょっとしたテクニックがある
+// 引数には、yyyy/mm形式でデータを与える
+// まだ作成途中ではある
+//
+// ------------------------------------------------------------------
+
+function test_get_date_lastdd(yy,mm) {
+
+    let date = new Date(yy, mm, 0);
+    let aa = date.getDate();
+
+    return aa;
+}
+
+
+
+// ------------------------------------------------------------------
+//
+// DateのgetMonth()の使い方について、動作確認
+//
+// ------------------------------------------------------------------
+
+function test_date1() {
+
+   // 引数を""で囲まない場合、0が戻る
+    var aa = new Date(2022/05/09);
+    var bb = aa.getMonth();
+    // console.log(bb);
+
+    // 0からカウントされて、4が返る
+    var aa = new Date("2022/05/09");
+    var bb = aa.getMonth();
+    // console.log(bb);
+
+    // 0からカウントされて、4が返る
+    // 1桁の場合、先頭0埋めしなくても問題ない
+    var aa = new Date("2022/5/9");
+    var bb = aa.getMonth();
+    // console.log(bb);
+
+    // aaは空白が返ってくる。yyyy/mm/ddであれば問題ないが、yyyy/mm形式は×
+    // ccには2022 bbには4が返ってくる
+    var aa = new Date("2022/5");
+    var cc = aa.getFullYear();
+    var bb = aa.getMonth();
+    //console.log(aa);
+    //console.log(cc);
+    //console.log(bb);
+
+    // 0からカウントされて、4が返る
+    // /編集でなく、-編集でもOK
+    var aa = new Date("2022-5-9");
+    var bb = aa.getMonth();
+    //console.log(bb);
+
+    // 1からカウントされて、5が返る
+    var aa = new Date("2022", "5", "9");
+    var bb = aa.getMonth();
+    // console.log(bb);
+
+
+    // 5が返る
+    // "05" でも"5"でもOK
+    var aa = new Date("2022", "05", "9");
+    var bb = aa.getMonth();
+    //console.log(bb);
+
+
+    // 5が返る
+    // 文字列で渡しても、数値で渡してもどっちでもOK
+    var aa = new Date(2022, 5, 9);
+    var bb = aa.getMonth();
+    //console.log(bb);
+
+}
+
+
+// ------------------------------------------------------------------
+//
+// DateのgetDay()の使い方について、動作確認
+//
+// ------------------------------------------------------------------
+
+function test_date2() {
+
+
+    // 0(日曜日)、 つまり、5月1日の曜日が返る
+    var aa = new Date("2022/05/01");
+    var bb = aa.getDay();
+    console.log(bb);
+
+    // 3(水曜日)、つまり、6月の曜日が返る 月は0からスタート 0が1月なので5月は6月となる 
+    var aa = new Date(2022,5,1);
+    var bb = aa.getDay();
+    console.log(bb);
+
+}
+                   
+
+// ------------------------------------------------------------------
+//
+// 日付の加算、減算の動作確認
+// 
+// ------------------------------------------------------------------
+
+function test_date_add() {
+
+    //システム日付から１年後
+    let date = new Date();    
+    date.setFullYear(date.getFullYear() + 1);
+    let aa = date.getFullYear();
+    console.log(aa);
+
+
+
+    //指定した日から１ヶ月後
+    let date1 = new Date("2000/12/01");
+    date1.setMonth(date1.getMonth() + 2);
+    let bb = date1.getFullYear().toString() + "/" + date1.getMonth().toString();
+    console.log(bb);
+
+
+    //指定した日から１日前
+    let date2 = new Date("2000/01/01");
+    date2.setDate(date2.getDate() - 1);
+    let cc = date2.getFullYear().toString() + "/" + (date2.getMonth() + 1).toString() + "/" + date2.getDate().toString();
+    // let cc = date2.getFullYear().toString();
+    console.log(cc);
+
+
+
+}
+
+
+// ------------------------------------------------------------------
+// 没ソース
+// 空のテキストファイルをUTF-8で作成する
+// encoding.jsの動作テスト
+// https://github.com/polygonplanet/encoding.js/blob/master/README_ja.md
+//
+// ------------------------------------------------------------------
+function test_create_textjs(filname) {
+
+    var fs = require('fs');
+    var fd;
+
+    var file = __dirname + "/" + filname + ".txt";             // 書き込み先ファイル（先）
+
+    // 空ファイルを作成してオープン
+    fs.writeFileSync(file, "");
+    var fd = fs.openSync(file, "a");
+
+    fs.closeSync(fd);
+
+
+    //const Encoding = require('encoding-japanese');
+    //const sjisBuffer = fs.readFileSync('./aaa.txt');
+    //const unicodeArray = Encoding.convert(sjisBuffer, {
+    //    //to: 'SJIS',
+    //    //from: 'UTF8'
+
+    //    to: 'UTF8',
+    //    from: 'SJIS'
+
+
+    //});
+    //console.log(Encoding.codeToString(unicodeArray));
+    //console.log(unicodeArray);
+
+}
+
+
+
+//test_create_textjs("aaaa");
 
 

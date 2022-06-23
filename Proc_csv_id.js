@@ -836,6 +836,129 @@ function proc10_conv_hosyuhani() {
 
 
 
+// ------------------------------------------------------------------
+//
+// 端末ID管理と請求処理の連携テストをするためのテストデータ（CSV）を作成する
+// 引数:0 データをクリア
+// 引数:1 データセット
+//
+// ------------------------------------------------------------------
+function proc11_tanid_testdata_create(flg) {
+
+    //var ary_1_data = [2, 5, 13, 14, 77, 82, 84, 85, 86, 87];     // 有償開始年月
+    //var ary_2_data = [3, 5,  6, 14, 78, 82, 83, 85, 88];         // 有償終了年月
+    //var ary_3_data = [4, 6, 13, 14, 80, 83, 84, 85, 87, 89];     // 斡旋手数料
+
+    var ary_1_data = [2, 5, 13, 14];        // 有償開始年月
+    var ary_2_data = [3, 5, 6, 14];         // 有償終了年月
+    var ary_3_data = [4, 6, 13, 14];        // 斡旋手数料
+
+    var fs = require('fs'), fd;
+
+    // 書き込み先パス
+    var file_path = __dirname + "/端末ID";
+
+    // 書き込み先ファイル
+    if (flg != 0) {
+        var file_kais = "/端末ID_有償開始" + ".csv";
+        var file_syuu = "/端末ID_有償終了" + ".csv";
+        var file_asse = "/端末ID_斡旋手数" + ".csv";
+    } else {
+        var file_kais = "/端末ID_有償開始_クリア" + ".csv";
+        var file_syuu = "/端末ID_有償終了_クリア" + ".csv";
+        var file_asse = "/端末ID_斡旋手数_クリア" + ".csv";
+    }
+
+    var str_kais = new Date("2022/01/01");                // 有償開始の初期値
+    var str_syuu = new Date("2023/06/01");                // 終了年月の初期値
+    var str_asse = 1000;                                  // 斡旋手数料の初期値
+
+
+    // ------------------------------------------------------------------------
+    // 新規ファイルをオープン（有償開始年月）
+    fs.writeFileSync(file_path + file_kais, "");
+    var fd = fs.openSync(file_path + file_kais, "a");
+
+    // ヘッダ部を出力
+    fs.writeSync(fd, ["自動採番", "有償開始年月"].join(",") + "\n", 0);
+
+    for (let idx in ary_1_data) {
+
+        let ary_out = [];
+        let set_date;
+
+        if (flg != 0) {
+            str_kais.setMonth(str_kais.getMonth() + 1);
+            set_date = str_kais.getFullYear().toString() + "/" + (str_kais.getMonth() + 1).toString();
+        } else {
+            set_date = "\"\"";
+        }
+
+        ary_out.push(("00000" + ary_1_data[idx].toString()).slice(-5));
+        ary_out.push(set_date);
+
+        fs.writeSync(fd, ary_out.join(",") + "\n", 0);
+    }
+    fs.closeSync(fd);
+
+    // ------------------------------------------------------------------------
+    // 新規ファイルをオープン（有償終了年月）
+    fs.writeFileSync(file_path + file_syuu, "");
+    var fd = fs.openSync(file_path + file_syuu, "a");
+
+    // ヘッダ部を出力    
+    fs.writeSync(fd, ["自動採番", "有償終了年月"].join(",") + "\n", 0);
+
+    for (let idx in ary_2_data) {
+
+        let ary_out = [];
+        let set_date;
+
+        if (flg != 0) {
+            str_syuu.setMonth(str_syuu.getMonth() + 1);
+            set_date = str_syuu.getFullYear().toString() + "/" + (str_syuu.getMonth() + 1).toString();
+        } else {
+            set_date = "\"\"";
+        }
+
+        ary_out.push(("00000" + ary_2_data[idx].toString()).slice(-5));
+        ary_out.push(set_date);
+
+        fs.writeSync(fd, ary_out.join(",") + "\n", 0);
+    }
+    fs.closeSync(fd);
+
+    // ------------------------------------------------------------------------
+    // 新規ファイルをオープン（斡旋手数料）
+    fs.writeFileSync(file_path + file_asse, "");
+    var fd = fs.openSync(file_path + file_asse, "a");
+
+    // ヘッダ部を出力
+    fs.writeSync(fd, ["自動採番", "斡旋手数料"].join(",") + "\n", 0);
+
+    for (let idx in ary_3_data) {
+
+        let ary_out = [];
+        let set_date;
+
+        if (flg != 0) {
+            set_date = str_asse + Number(idx) * 10;
+        } else {
+            set_date = "\"\"";
+        }
+
+        ary_out.push(("00000" + ary_3_data[idx].toString()).slice(-5));
+        ary_out.push(set_date);
+
+        fs.writeSync(fd, ary_out.join(",") + "\n", 0);
+    }
+    fs.closeSync(fd);
+}
+
+
+
+
+
 // proc1_write_header();
 // proc2_get_user();
 // proc3_match_user();
@@ -845,3 +968,4 @@ function proc10_conv_hosyuhani() {
 // proc7_write_zeropad();
 // proc9_check_file(3);
 // proc10_conv_hosyuhani();
+// proc11_tanid_testdata_create();
