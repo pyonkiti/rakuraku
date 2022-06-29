@@ -959,6 +959,57 @@ function proc11_tanid_testdata_create(flg) {
 
 
 
+// ------------------------------------------------------------------
+// 
+// 端末ID管理の有償開始年月、有償終了年月のインポート用ファイルをクリアするための処理
+//
+// ------------------------------------------------------------------
+
+function proc12_update_text() {
+
+    var fs = require('fs'), fd;
+
+    var path = __dirname + "/端末ID/";                               // パス
+    var file = "請求インポート_有償開始終了年月_202206.csv";         // ファイル（元）
+    var filn = file.replace('.', '_new.');                           // ファイル（先）
+
+    // 読み込む
+    var text = fs.readFileSync(path + file, 'utf8');                // 第二引数はテキストファイルの文字コードを指定
+    var lines = text.toString().split('\r\n');                       // 改行コードで、文字列⇒1レコード:1要素の配列に変換
+
+    // 空ファイルを新規作成
+    fs.writeFileSync(path + filn, "");
+    var fd = fs.openSync(path + filn, "a");
+
+    for (var idx in lines) {
+
+        let ary = [];
+
+        if (idx == 0) {
+
+            ary.push('"自動採番"');
+            ary.push('"有償開始年月"');
+            ary.push('"有償終了年月"');
+
+        } else {
+
+            let row = lines[idx].split(",");
+
+            if (row[0] == "") { continue; }
+
+            ary.push(row[0]);
+            ary.push('""');
+            ary.push('""');
+        }
+        // 書き込む
+        fs.writeSync(fd, ary.join(",") + "\n", 0);
+    }
+    fs.closeSync(fd);
+}
+
+
+
+
 // proc1_write_header();
 // proc2_get_user();
 // proc3_match_user();
@@ -969,3 +1020,4 @@ function proc11_tanid_testdata_create(flg) {
 // proc9_check_file(3);
 // proc10_conv_hosyuhani();
 // proc11_tanid_testdata_create();
+// proc12_update_text();

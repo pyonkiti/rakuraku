@@ -48,6 +48,47 @@ function test01_write(flg_bom) {
 
 
 
+// ------------------------------------------------------------------
+//
+// 新規ファイルを作成して、プログラム内から固定文字を書き込む
+// 
+// ------------------------------------------------------------------
+
+function test_create_text() {
+
+    var fs = require('fs'), fd;
+
+    var path = __dirname + "/";             　　　// パス
+    var file = "test.csv";                        // ファイル（先）
+
+    // 空ファイルを新規作成
+    fs.writeFileSync(path + file, "");
+
+    // 空ファイルをAppendモードでOpen
+    var fd = fs.openSync(path + file, "a");    
+
+    var arry = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    for (let icnt = 0; icnt < 10; icnt++) {
+
+        let data = [];
+
+        if (icnt == 0) {
+            data[0] = "カラム1";
+            data[1] = "カラム2";
+        } else {
+            data[0] =  arry[icnt].toString();
+            data[1] = (arry[icnt] * 10).toString();
+        }
+
+        // ファイルに１レコードを書き込む
+        fs.writeSync(fd, data.join(",") + "\n", 0);
+    }
+    fs.closeSync(fd);
+}
+
+
+
 
 // ------------------------------------------------------------------
 // Excelファイル処理
@@ -488,46 +529,5 @@ function test_date_add() {
 
 }
 
-
-// ------------------------------------------------------------------
-// 没ソース
-// 空のテキストファイルをUTF-8で作成する
-// encoding.jsの動作テスト
-// https://github.com/polygonplanet/encoding.js/blob/master/README_ja.md
-//
-// ------------------------------------------------------------------
-function test_create_textjs(filname) {
-
-    var fs = require('fs');
-    var fd;
-
-    var file = __dirname + "/" + filname + ".txt";             // 書き込み先ファイル（先）
-
-    // 空ファイルを作成してオープン
-    fs.writeFileSync(file, "");
-    var fd = fs.openSync(file, "a");
-
-    fs.closeSync(fd);
-
-
-    //const Encoding = require('encoding-japanese');
-    //const sjisBuffer = fs.readFileSync('./aaa.txt');
-    //const unicodeArray = Encoding.convert(sjisBuffer, {
-    //    //to: 'SJIS',
-    //    //from: 'UTF8'
-
-    //    to: 'UTF8',
-    //    from: 'SJIS'
-
-
-    //});
-    //console.log(Encoding.codeToString(unicodeArray));
-    //console.log(unicodeArray);
-
-}
-
-
-
-//test_create_textjs("aaaa");
 
 
