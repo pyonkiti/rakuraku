@@ -1008,6 +1008,92 @@ function proc12_update_text() {
 }
 
 
+// ------------------------------------------------------------------
+//
+// 楽楽　見積テーブルのテスト用サンプルデータ作成
+// 
+// ------------------------------------------------------------------
+
+function proc13_mitumori_table_testcsv_create() {
+
+    var fs = require('fs');
+    var fd;
+    var file = __dirname + "/見積テーブル_テストデータ";
+
+    fs.writeFileSync(file + "03.csv", "");                          // 空のファイルを書き
+    fd = fs.openSync(file + "03.csv", "a");                         // ファイルをオープン
+
+    // ファイルの存在チェック
+    if (!fs.existsSync(file + "02.csv")) {
+        console.log("読み込み元のCSVファイルが存在しません");
+        return;
+    }
+
+    var text = fs.readFileSync(file + "02.csv", 'utf8');           // 第二引数はテキストファイルの文字コードを指定
+    var lines = text.toString().split(/\r\n|\r|\n/);               // \r\n 文字列⇒配列
+
+    for (let idx in lines) {
+
+        let data = "";
+        let arry = [];
+
+        if (idx == 0) {
+
+            // ヘッダ部にタイトルを出力
+            arry.push("発行日");
+            arry.push("捺印区分");
+            arry.push("請求先");
+            arry.push("件名（上段）");
+            arry.push("件名（下段）");
+            arry.push("納入場所");
+            arry.push("納期");
+            arry.push("お支払条件");
+            arry.push("見積有効期限");
+            arry.push("摘要（上段）");
+            arry.push("摘要（下段）");
+            arry.push("単位");
+            arry.push("備考");
+
+        } else {
+
+            data = (idx < 4) ? "" : "2022年07月20日";
+            arry.push(data);
+
+            data = (idx < 4) ? "会社印" : "無";
+            arry.push(data);
+
+            arry.push("〇〇〇〇市　市長　米原　太郎");
+            arry.push("クラウド型遠隔監視システム");
+            arry.push("情報配信サービス利用契約");
+            arry.push("△□×市　〇〇〇〇〇処理施設");
+            arry.push("令和４年度内");
+            arry.push("月末締め、翌月末支払い");
+            arry.push("発行日から60日");
+            arry.push("クラウド型遠隔監視システム");
+            arry.push("情報配信サービス利用料");
+
+            switch (true) {
+                case ["1", "2", "3"].includes(idx.toString()):
+                    data = "式";
+                    break;
+                case ["4", "5", "6"].includes(idx.toString()):
+                    data = "ヶ月";
+                    break;
+                default:
+                    data = "ヶ所";
+            }
+            arry.push(data);
+
+            arry.push("備考の印字テストです。");
+        }
+        if (lines[idx] != "") { fs.writeSync(fd, lines[idx] + "," + arry.join(",") + "\r\n", 0); }
+    }
+    fs.closeSync(fd);
+
+}
+
+
+
 
 
 // proc1_write_header();
@@ -1021,3 +1107,6 @@ function proc12_update_text() {
 // proc10_conv_hosyuhani();
 // proc11_tanid_testdata_create();
 // proc12_update_text();
+// proc13_mitumori_table_testcsv_create();
+
+

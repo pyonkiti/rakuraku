@@ -531,3 +531,70 @@ function test_date_add() {
 
 
 
+// ------------------------------------------------------------------
+//
+// switch文の中に条件式を組み込んだ使い方例
+// 
+// ------------------------------------------------------------------
+
+function test_switch() {
+
+    for (let cnt = 0; cnt <= 10; cnt++) {
+
+        let ret;
+
+        switch (true) {
+            case cnt == 0:
+                ret = "0 " + cnt;
+                break;
+            case [1, 2, 3].includes(cnt):
+                ret = "1,2,3 " + cnt;
+                break;
+            case [4, 5, 6].includes(cnt):
+                ret = "4,5,6 " + cnt;
+                break;
+            case (cnt >= 7 && cnt <= 8):
+                ret = "7,8 " + cnt;
+                break;
+            default:
+                ret = "9以上 " + cnt;
+        }
+        console.log("ret = " + ret);
+    }
+}
+
+
+
+
+// ------------------------------------------------------------------
+//
+// switch文の中に条件式を組み込んだ使い方例
+// 
+// ------------------------------------------------------------------
+
+function test_switch() {
+
+    for (let cnt = 0; cnt <= 10; cnt++) {
+
+        let ret;
+
+        switch (true) {
+            case cnt == 0:
+                ret = "0 " + cnt;
+                break;
+            case [1, 2, 3].includes(cnt):
+                ret = "1,2,3 " + cnt;
+                break;
+            case [4, 5, 6].includes(cnt):
+                ret = "4,5,6 " + cnt;
+                break;
+            case (cnt >= 7 && cnt <= 8):
+                ret = "7,8 " + cnt;
+                break;
+            default:
+                ret = "9以上 " + cnt;
+        }
+        console.log("ret = " + ret);
+    }
+}
+
