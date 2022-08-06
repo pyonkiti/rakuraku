@@ -1096,6 +1096,187 @@ function proc13_mitumori_table_testcsv_create() {
 
 
 
+// ------------------------------------------------------------------
+//
+// Excelファイル処理（メイン）
+// Excelファイルを読み込んで、特定のセルの値を読み込み、新規のテキストファイルに書き込む
+//
+// ------------------------------------------------------------------
+
+function proc14_mitumori_excel_output_main(syori_flg) {
+
+    var fs = require('fs');
+    var path = "./見積書/" + syori_flg;
+    var cnt = 0;
+
+    // フォルダの存在確認
+    if (!fs.existsSync(path)) {
+        console.log("指定したフォルダが存在しません");
+        return false;
+    }
+
+    // フォルダ内の全ファイル/フォルダを取得
+    // filesは配列で返る  Array.isArray(files)はtrueで返る
+    fs.readdir(path, (err, files) => {
+
+        for (let i = 0; i < files.length; i++) {
+
+            // 拡張子を取得
+            // xlsx以外は読み飛ばす
+            if (files[i].split('.').pop() != "xlsx") { continue; }
+
+            // ファイル名の先頭に~$が付くファイルは、ゴミファイルのため読み飛ばす
+            if (files[i].match(/^~\$/)) { continue; }
+
+            // Excelファイルを読み込みCSVファイルに出力する
+            proc14_mitumori_excel_output_proc01(syori_flg, cnt, files[i].split('.').shift());
+            cnt++;
+        }
+    })
+}
+
+
+
+// ------------------------------------------------------------------
+// Excelファイル処理（処理１）
+// Excelファイルを読み込んで、特定のセルの値を読み込み、新規のテキストファイルに書き込む
+// 
+// ------------------------------------------------------------------
+function proc14_mitumori_excel_output_proc01(syori_flg, syori_cnt, excel_file) {
+
+    var fs = require('fs');
+    var file = __dirname + "/" + syori_flg + ".csv";
+
+    // １回目のみ、空ファイルを書き出す
+    if (syori_cnt == 0) {
+        fs.writeFileSync(file, "");
+    }
+
+    // 既存のファイルをオープン
+    var fd = fs.openSync(file, "a");
+
+    // Excelを読み込む
+    var xlsx = require('xlsx');
+    var workbook = xlsx.readFile("./見積書/" + syori_flg + "/" + excel_file + ".xlsx");
+
+    // 全シートを配列で取得
+    var sheet_ary = workbook.SheetNames;
+
+    var flg = false;
+    var sheet_index;
+
+    // シート名に見積書/請求書/見積明細書/請求明細書を含むシートの存在チェック
+    for (let i = 0; i < sheet_ary.length; i++) {
+        if (sheet_ary[i].includes(syori_flg)) {
+            flg = true;
+            sheet_index = i;
+            break;
+        }
+    }
+
+    // シート名に見積書/請求書/見積明細書/請求明細書を含むシートがなければエラー
+    if (flg == false) {
+        console.log(sheet_ary);
+        console.log("読み込み対象のシートが存在しません");
+        return false;
+    }
+
+    // 該当のシート名を取得    
+    var sheet_nm = workbook.SheetNames[sheet_index];
+
+    // シートの全データをJSONで取得
+    var sheet = workbook.Sheets[sheet_nm];
+
+    var ary = [];
+    let data = [];
+
+    // タイトル部出力
+    if (syori_cnt == 0) {
+
+        switch (syori_flg) {
+            case "見積書":
+
+                ary.push("ファイル名");
+                ary.push("自動採番");
+                ary.push("自動採番（請求）");
+                ary.push("請求先");
+                ary.push("金額");
+                ary.push("消費税");
+                ary.push("合計");
+                break;
+
+            case "請求書":
+
+                ary.push("ファイル名");
+                ary.push("自動採番");
+                ary.push("請求先");
+                ary.push("金額");
+                ary.push("消費税");
+                ary.push("合計");
+                break;
+
+            case "見積明細書":
+            case "請求明細書":
+
+                ary.push("ファイル名");
+                ary.push("自動採番（見積T）");
+                ary.push("自動採番（請求T）");
+                ary.push("請求先");
+                ary.push("施設名");
+                ary.push("〇月請求分");
+                ary.push("単価");
+                ary.push("月数");
+                break;
+        }
+        fs.writeSync(fd, ary.join(',') + "\r\n", 0);
+    }
+
+    // 明細部出力
+    ary = [];
+    ary.push(excel_file);                                                         // ファイル名
+
+    switch (syori_flg) {
+
+        case "見積書":
+
+            // c:列 r:行
+            data[0] = com.null_pad(sheet[xlsx.utils.encode_cell({ c: 0, r: 1 })]);
+            data[1] = (data[0].replace(/（見積№：  /, "")).replace(/  号）/, "");
+            ary.push(data[1]);                                                        // 自動採番
+
+            ary.push(com.null_pad(sheet[xlsx.utils.encode_cell({ c: 10, r: 10 })]));  // 自動採番（請求）
+            ary.push(com.null_pad(sheet[xlsx.utils.encode_cell({ c: 0, r: 3 })]));    // 請求先
+
+            ary.push(com.null_pad(sheet[xlsx.utils.encode_cell({ c: 7, r: 21 })]));   // 金額 
+            ary.push(com.null_pad(sheet[xlsx.utils.encode_cell({ c: 2, r: 18 })]));   // 消費税
+            ary.push(com.null_pad(sheet[xlsx.utils.encode_cell({ c: 2, r: 17 })]));   // 合計
+            break;
+
+        case "請求書":
+
+            ary.push(com.null_pad(sheet["S39"]));   // 自動採番
+            ary.push(com.null_pad(sheet["C3"]));    // 請求先
+            ary.push(com.null_pad(sheet["K12"]));   // 金額 
+            ary.push(com.null_pad(sheet["H9"]));    // 消費税
+            ary.push(com.null_pad(sheet["F6"]));    // 合計
+            break;
+
+        case "見積明細書":
+
+            break;
+
+        case "請求明細書":
+
+            break;
+    }
+    fs.writeSync(fd, ary.join(',') + "\r\n", 0);
+    fs.closeSync(fd);
+}
+
+
+
+
+
 // proc1_write_header();
 // proc2_get_user();
 // proc3_match_user();
@@ -1108,5 +1289,6 @@ function proc13_mitumori_table_testcsv_create() {
 // proc11_tanid_testdata_create();
 // proc12_update_text();
 // proc13_mitumori_table_testcsv_create();
+// proc14_mitumori_excel_output_main("見積書");
 
 
